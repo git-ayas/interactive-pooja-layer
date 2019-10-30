@@ -1,4 +1,4 @@
-import * as THREE from './libs/three.module.js'
+//import * as THREE from './libs/three.module.js'
 
 window.requestAnimFrame = (function () {
     return window.requestAnimationFrame ||
@@ -10,6 +10,7 @@ window.requestAnimFrame = (function () {
             window.setTimeout(callback, 1000 / 60);
         };
 })();
+var hammertime = new Hammer(document.getElementById('interactiveLayer'));
 var camera, scene, renderer;
 var plane;
 var mouse, raycaster, isShiftDown = false;
@@ -127,7 +128,7 @@ function init() {
 
 
     // add it to the scene
-    
+
 
     //add emitter
 
@@ -146,16 +147,16 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
-    hammertime.on('pan', function (ev) {
-        console.log(ev);
-    });
+    hammertime.on('press', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement)
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
+    hammertime.on('pan',onDocumentTouchPan)
     document.addEventListener('touchstart', onDocumentMouseMove, false);
     document.addEventListener('mousedown', onDocumentMouseDown, false);
+    //hammertime.on('press',onDocumentMouseDown)
     document.addEventListener('mouseup', resetThaaliPos, false);
-    document.addEventListener('touchend', resetThaaliPos, false);
+    //document.addEventListener('touchend', resetThaaliPos, false);
     document.addEventListener('keydown', onDocumentKeyDown, false);
     document.addEventListener('keyup', onDocumentKeyUp, false);
     //
@@ -195,10 +196,28 @@ function onDocumentMouseMove(event) {
             resetThaaliPos();
         }
 
+    }
+    render();
+}
+function onDocumentTouchPan(event) {
+
+    event.preventDefault();
+    mouse.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(objects);
+    if (intersects.length > 0) {
+        var intersect = intersects[0];
+        console.log("Following:"+followMouse)
+        if (followMouse) {
+
+
+            rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
+            rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
+        } else {
+            resetThaaliPos();
+        }
 
     }
-
-
     render();
 }
 function resetThaaliPos() {
@@ -300,6 +319,39 @@ function onDocumentMouseDown(event) {
         render();
     }
 }
+function onDocumentTouchPress(event) {
+
+    resetThaaliPos();
+    shootBall();
+
+
+    event.preventDefault();
+
+    // mouse.set((event.deltaX / window.innerWidth) * 2 - 1, - (event.deltaY / window.innerHeight) * 2 + 1);
+
+    //mouse.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+    mouse.set((event.pointers[0].clientX / window.innerWidth) * 2 - 1, - (event.pointers[0].clientY / window.innerHeight) * 2 + 1);
+
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(objects);
+
+    travelParticles()
+
+    if (intersects.length > 0) {
+        var intersect = intersects[0];
+        var currentPoint = intersect.point;
+
+        if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
+            if ((currentPoint.z > 200) && (currentPoint.z < 268)) {
+                console.log('Capture Point detected.')
+                followMouse = true;
+            }
+        }
+    }
+    updateParticle();
+    return;
+}
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
         case 16: isShiftDown = true; toggleFlowers(); break;
@@ -325,9 +377,9 @@ function travelParticles() {
     if (travPartFlag) {
         if (addPartFlag) {
             scene.add(particleSystem);
-            addPartFlag=false;            
+            addPartFlag = false;
         }
-        
+
         particleSystem.translateY(-partSpeed * delta / 2);
         particleSystem.translateZ(partSpeed * delta);
 
