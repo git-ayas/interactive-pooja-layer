@@ -41,7 +41,7 @@ var particleCount = 60,
 
 var rollOverMesh, rollOverMaterial;
 var cubeGeo, cubeMaterial;
-var followMouse = false;
+var followMouse = true;
 var objects = [];
 init();
 render();
@@ -147,15 +147,16 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
-    hammertime.on('press', onDocumentTouchPress);
+    hammertime.on('tap', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement)
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
-    hammertime.on('pan',onDocumentTouchPan)
-    document.addEventListener('touchstart', onDocumentMouseMove, false);
-    document.addEventListener('mousedown', onDocumentMouseDown, false);
+    //hammertime.on('pan',onDocumentTouchPan)
+    document.addEventListener('touchmove', onDocumentTouchPan, false);
+    //document.addEventListener('touchstart', onDocumentMouseMove, false);
+    //document.addEventListener('mousedown', onDocumentMouseDown, false);
     //hammertime.on('press',onDocumentMouseDown)
-    document.addEventListener('mouseup', resetThaaliPos, false);
+    //document.addEventListener('mouseup', resetThaaliPos, false);
     //document.addEventListener('touchend', resetThaaliPos, false);
     document.addEventListener('keydown', onDocumentKeyDown, false);
     document.addEventListener('keyup', onDocumentKeyUp, false);
@@ -202,15 +203,13 @@ function onDocumentMouseMove(event) {
 function onDocumentTouchPan(event) {
 
     event.preventDefault();
-    mouse.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+    mouse.set((event.changedTouches[0].clientX / window.innerWidth) * 2 - 1, - (event.changedTouches[0].clientY / window.innerHeight) * 2 + 1);
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(objects);
     if (intersects.length > 0) {
         var intersect = intersects[0];
         console.log("Following:"+followMouse)
         if (followMouse) {
-
-
             rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
             rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
         } else {
