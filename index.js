@@ -14,6 +14,7 @@ var camera, scene, renderer;
 var plane;
 var mouse, raycaster, isShiftDown = false;
 var particleSystem;// create the particle variables
+var travPartFlag=false;
 
 //plasma shooter
 var plasmaBalls = [];
@@ -300,7 +301,7 @@ function onDocumentMouseDown(event) {
 }
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
-        case 16: isShiftDown = true; travelProjectile(); break;
+        case 16: isShiftDown = true; toggleFlowers(); break;
     }
 }
 function onDocumentKeyUp(event) {
@@ -314,16 +315,20 @@ function travelProjectile() {
         b.translateY(-speed * delta); // move along the local z-axis
     });
 }
+function toggleFlowers(){
+    travPartFlag=!travPartFlag
+}
 function travelParticles() {
     let delta = clock.getDelta();
     const partSpeed = -500;
     particleSystem.translateY(-partSpeed * delta / 2);
     particleSystem.translateZ(partSpeed * delta);
 
-    if (particleSystem.position.z < -300) {
+    if ((particleSystem.position.z < -300)||!travPartFlag) {
         scene.remove(particleSystem);
         particleSystem.position.set(0, 1000, 200);
         scene.add(particleSystem);
+        travPartFlag=false
 
     }
 
