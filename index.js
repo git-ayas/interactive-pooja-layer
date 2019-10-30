@@ -41,7 +41,7 @@ var particleCount = 60,
 
 var rollOverMesh, rollOverMaterial;
 var cubeGeo, cubeMaterial;
-var followMouse = true;
+var followMouse = false;
 var objects = [];
 init();
 render();
