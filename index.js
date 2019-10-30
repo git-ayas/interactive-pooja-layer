@@ -1,5 +1,5 @@
 import * as THREE from './libs/three.module.js'
-var Hammer = require(['']);
+
 window.requestAnimFrame = (function () {
     return window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
