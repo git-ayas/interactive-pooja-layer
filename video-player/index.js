@@ -153,10 +153,12 @@ function init() {
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     //hammertime.on('pan',onDocumentTouchPan)
     document.addEventListener('touchmove', onDocumentTouchPan, false);
+    document.addEventListener('touchend',resetThaaliPos, false);
+    
     //document.addEventListener('touchstart', onDocumentMouseMove, false);
-    //document.addEventListener('mousedown', onDocumentMouseDown, false);
+    document.addEventListener('mousedown', onDocumentMouseDown, false);
     //hammertime.on('press',onDocumentMouseDown)
-    //document.addEventListener('mouseup', resetThaaliPos, false);
+    document.addEventListener('mouseup', resetThaaliPos, false);
     //document.addEventListener('touchend', resetThaaliPos, false);
     document.addEventListener('keydown', onDocumentKeyDown, false);
     document.addEventListener('keyup', onDocumentKeyUp, false);
@@ -189,8 +191,6 @@ function onDocumentMouseMove(event) {
     if (intersects.length > 0) {
         var intersect = intersects[0];
         if (followMouse) {
-
-
             rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
             rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
         } else {
@@ -201,21 +201,20 @@ function onDocumentMouseMove(event) {
     render();
 }
 function onDocumentTouchPan(event) {
-
+    onDocumentTouchCPointContact(event)
     event.preventDefault();
     mouse.set((event.changedTouches[0].clientX / window.innerWidth) * 2 - 1, - (event.changedTouches[0].clientY / window.innerHeight) * 2 + 1);
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(objects);
     if (intersects.length > 0) {
         var intersect = intersects[0];
-        console.log("Following:"+followMouse)
+        //console.log("Following:" + followMouse)
         if (followMouse) {
             rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
             rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
         } else {
             resetThaaliPos();
         }
-
     }
     render();
 }
@@ -321,7 +320,7 @@ function onDocumentMouseDown(event) {
 function onDocumentTouchPress(event) {
 
     resetThaaliPos();
-    shootBall();
+
 
 
     event.preventDefault();
@@ -351,6 +350,38 @@ function onDocumentTouchPress(event) {
     updateParticle();
     return;
 }
+function onDocumentTouchCPointContact(event) {
+
+   
+
+
+    event.preventDefault();
+
+    // mouse.set((event.deltaX / window.innerWidth) * 2 - 1, - (event.deltaY / window.innerHeight) * 2 + 1);
+
+    //mouse.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+    mouse.set((event.targetTouches[0].clientX / window.innerWidth) * 2 - 1, - (event.targetTouches[0].clientY / window.innerHeight) * 2 + 1);
+
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(objects);
+
+    travelParticles()
+
+    if (intersects.length > 0) {
+        var intersect = intersects[0];
+        var currentPoint = intersect.point;
+
+        if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
+            if ((currentPoint.z > 200) && (currentPoint.z < 268)) {
+                //console.log('Capture Point detected.')
+                followMouse = true;
+            }
+        }
+    }
+    updateParticle();
+    return;
+}
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
         case 16: isShiftDown = true; toggleFlowers(); break;
@@ -370,6 +401,9 @@ function travelProjectile() {
 function toggleFlowers() {
     travPartFlag = !travPartFlag
 }
+function toggleThaali() {
+    followMouse = !followMouse;
+}
 function travelParticles() {
     let delta = clock.getDelta();
     const partSpeed = -500;
@@ -379,7 +413,7 @@ function travelParticles() {
             addPartFlag = false;
         }
 
-        particleSystem.translateY(-partSpeed * delta/10);
+        particleSystem.translateY(-partSpeed * delta / 10);
         particleSystem.translateZ(partSpeed * delta);
 
     }
