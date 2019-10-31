@@ -41,6 +41,7 @@ var particleCount = 60,
     });
 
 var rollOverMesh, rollOverMaterial;
+var flowerBtnMesh,flowerBtnMaterial
 var cubeGeo, cubeMaterial;
 var followMouse = false;
 var objects = [];
@@ -68,7 +69,26 @@ function init() {
 
     rollOverMesh = new THREE.Mesh(rollOverGeo, rollOverMaterial);
     rollOverMesh.overdraw = true;
+    rollOverMesh.position.set(0, 1, 240);
     scene.add(rollOverMesh);
+
+    //add flower button
+    var flowerBtnGeo=new THREE.PlaneGeometry(200,100,200);
+    flowerBtnGeo.rotateX(-Math.PI/2);
+    flowerBtnMaterial = new THREE.MeshLambertMaterial({
+        color: null,
+        map: new THREE.TextureLoader().load('textures/flowerBtn.png'),
+        transparent: true
+    });
+    flowerBtnMesh=new THREE.Mesh(flowerBtnGeo,flowerBtnMaterial);
+    flowerBtnMesh.position.set(-200,1,240);
+    scene.add(flowerBtnMesh)
+
+
+
+
+
+
     // cubes
     cubeGeo = new THREE.BoxBufferGeometry(50, 50, 50);
     cubeMaterial = new THREE.MeshLambertMaterial(
@@ -147,7 +167,7 @@ function init() {
     renderer.setClearColor(0xffffff, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(bodies[0].offsetWidth, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-30, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement)
@@ -169,10 +189,10 @@ function init() {
 }
 function onWindowResize() {
     //camera.aspect = window.innerWidth / window.innerHeight;
-    camera.aspect = bodies[0].offsetWidth / window.innerHeight;
+    camera.aspect = document.getElementById('interactiveLayer').offsetWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(bodies[0].offsetWidth, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-20, window.innerHeight);
 }
 function shootBall() {
     let plasmaBall = new THREE.Mesh(new THREE.SphereGeometry(10, 10, 10), new THREE.MeshBasicMaterial({
@@ -297,6 +317,11 @@ function onDocumentMouseDown(event) {
         if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
             if ((currentPoint.z > 202) && (currentPoint.z < 277)) {
                 followMouse = true;
+            }
+        }
+        if ((currentPoint.x > -284) && (currentPoint.x < -119)) {
+            if ((currentPoint.z > 202) && (currentPoint.z < 277)) {
+                toggleFlowers();
             }
         }
     }
