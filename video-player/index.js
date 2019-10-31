@@ -10,6 +10,7 @@ window.requestAnimFrame = (function () {
             window.setTimeout(callback, 1000 / 60);
         };
 })();
+var bodies = document.getElementsByTagName("body");
 var hammertime = new Hammer(document.getElementById('interactiveLayer'));
 var camera, scene, renderer;
 var plane;
@@ -145,7 +146,8 @@ function init() {
     renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setClearColor(0xffffff, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(bodies[0].offsetWidth, bodies[0].offsetHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement)
@@ -166,9 +168,11 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    //camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = bodies[0].offsetWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(bodies[0].offsetWidth, window.innerHeight);
 }
 function shootBall() {
     let plasmaBall = new THREE.Mesh(new THREE.SphereGeometry(10, 10, 10), new THREE.MeshBasicMaterial({
@@ -342,7 +346,7 @@ function onDocumentTouchPress(event) {
 
         if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
             if ((currentPoint.z > 200) && (currentPoint.z < 268)) {
-                console.log('Capture Point detected.')
+                //console.log('Capture Point detected.')
                 followMouse = true;
             }
         }
