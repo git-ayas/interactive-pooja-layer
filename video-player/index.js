@@ -147,7 +147,7 @@ function init() {
     renderer.setClearColor(0xffffff, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(bodies[0].offsetWidth, bodies[0].offsetHeight);
+    renderer.setSize(bodies[0].offsetWidth, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement)
@@ -155,8 +155,8 @@ function init() {
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     //hammertime.on('pan',onDocumentTouchPan)
     document.addEventListener('touchmove', onDocumentTouchPan, false);
-    document.addEventListener('touchend',resetThaaliPos, false);
-    
+    document.addEventListener('touchend', resetThaaliPos, false);
+
     //document.addEventListener('touchstart', onDocumentMouseMove, false);
     document.addEventListener('mousedown', onDocumentMouseDown, false);
     //hammertime.on('press',onDocumentMouseDown)
@@ -356,7 +356,7 @@ function onDocumentTouchPress(event) {
 }
 function onDocumentTouchCPointContact(event) {
 
-   
+
 
 
     event.preventDefault();
@@ -388,12 +388,16 @@ function onDocumentTouchCPointContact(event) {
 }
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
-        case 16: isShiftDown = true; toggleFlowers(); break;
+        case 16: isShiftDown = true;   break;
+        case 49: toggleFlowers(); break;
+        default:
+            //console.log(event.keyCode)
     }
 }
 function onDocumentKeyUp(event) {
     switch (event.keyCode) {
         case 16: isShiftDown = false; break;
+        
     }
 }
 function travelProjectile() {
