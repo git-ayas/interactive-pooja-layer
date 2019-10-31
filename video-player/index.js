@@ -298,7 +298,7 @@ function updateParticle() {
 function onDocumentMouseDown(event) {
 
     resetThaaliPos();
-    shootBall();
+    //shootBall();
 
     event.preventDefault();
 
@@ -310,7 +310,7 @@ function onDocumentMouseDown(event) {
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(objects);
 
-    travelParticles()
+    //travelParticles()
 
     if (intersects.length > 0) {
         var intersect = intersects[0];
@@ -329,24 +329,7 @@ function onDocumentMouseDown(event) {
     }
     updateParticle();
     return;
-    if (intersects.length > 0) {
-        var intersect = intersects[0];
-        // delete cube
-        if (isShiftDown) {
-            if (intersect.object !== plane) {
-                scene.remove(intersect.object);
-                objects.splice(objects.indexOf(intersect.object), 1);
-            }
-            // create cube
-        } else {
-            var voxel = new THREE.Mesh(cubeGeo, cubeMaterial);
-            voxel.position.copy(intersect.point).add(intersect.face.normal);
-            voxel.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25);
-            scene.add(voxel);
-            objects.push(voxel);
-        }
-        render();
-    }
+    
 }
 function onDocumentTouchPress(event) {
 
