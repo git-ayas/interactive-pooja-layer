@@ -170,7 +170,9 @@ function init() {
     renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-30, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
-    document.getElementById('interactiveLayer').appendChild(renderer.domElement)
+    document.getElementById('interactiveLayer').appendChild(renderer.domElement);
+    
+
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     //hammertime.on('pan',onDocumentTouchPan)
@@ -436,6 +438,11 @@ function toggleFlowers() {
 }
 function toggleThaali() {
     followMouse = !followMouse;
+}
+function toggleFullscreen(){
+    $('.video-react-big-play-button').trigger("click");
+    var elem= document.getElementById('parent_space');
+    elem.requestFullscreen();
 }
 function travelParticles() {
     let delta = clock.getDelta();
