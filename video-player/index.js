@@ -26,7 +26,7 @@ var speed = 40;
 var clock = new THREE.Clock();
 //!plasma shooter
 
-var particleCount = 60,
+var particleCount = 40,
 
     particles = new THREE.Geometry(),
     pMaterial = new THREE.PointsMaterial({
@@ -34,7 +34,7 @@ var particleCount = 60,
         transparent: true,
         size: 50,
         map: new THREE.TextureLoader().load(
-            "textures/particle.png"
+            "textures/particle-lower.png"
         ),
         blending: THREE.AdditiveBlending,
 
@@ -196,17 +196,7 @@ function onWindowResize() {
     //renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-20, window.innerHeight);
 }
-function shootBall() {
-    let plasmaBall = new THREE.Mesh(new THREE.SphereGeometry(10, 10, 10), new THREE.MeshBasicMaterial({
-        color: "red"
-    }));
-    const center = new THREE.Vector3();
-    plasmaBall.position.copy(emitter.getWorldPosition(center)); // start position - the tip of the weapon
-    plasmaBall.quaternion.copy(camera.quaternion); // apply camera's quaternion
-    scene.add(plasmaBall);
-    plasmaBalls.push(plasmaBall);
-    render();
-}
+
 
 function onDocumentMouseMove(event) {
 
