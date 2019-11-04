@@ -1,4 +1,5 @@
-//import * as THREE from './libs/three.module.js'
+import * as THREE from './libs/three.module.js'
+import TWEEN from './libs/Tween.js'
 
 window.requestAnimFrame = (function () {
     return window.requestAnimationFrame ||
@@ -15,7 +16,7 @@ var hammertime = new Hammer(document.getElementById('interactiveLayer'));
 var camera, scene, renderer;
 var plane;
 var mouse, raycaster, isShiftDown = false;
-var particleSystem;// create the particle variables
+var particleSystem,particlesPosition,particlesTarget,partTween;// create the particle variables
 var travPartFlag = false;
 var addPartFlag = true;
 
@@ -25,6 +26,7 @@ var emitter = new THREE.Object3D();
 var speed = 40;
 var clock = new THREE.Clock();
 //!plasma shooter
+var TWEENi;
 
 var particleCount = 40,
 
@@ -41,13 +43,14 @@ var particleCount = 40,
     });
 
 var rollOverMesh, rollOverMaterial;
-var flowerBtnMesh,flowerBtnMaterial
+var flowerBtnMesh, flowerBtnMaterial
 var cubeGeo, cubeMaterial;
 var followMouse = false;
 var objects = [];
 init();
 render();
 function init() {
+    document.getElementById('fullScreeBtn').onclick=toggleFullscreen;
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
     camera.position.set(0, 1000, 0);
     camera.lookAt(0, 0, 0);
@@ -63,7 +66,7 @@ function init() {
 
     rollOverMaterial = new THREE.MeshLambertMaterial({
         color: null,
-        map: new THREE.TextureLoader().load('textures/pooja-thaali.png'),
+        map: new THREE.TextureLoader().load('textures/pooja-thaali-lower.png'),
         transparent: true
     });
 
@@ -73,15 +76,15 @@ function init() {
     scene.add(rollOverMesh);
 
     //add flower button
-    var flowerBtnGeo=new THREE.PlaneGeometry(200,100,200);
-    flowerBtnGeo.rotateX(-Math.PI/2);
+    var flowerBtnGeo = new THREE.PlaneGeometry(200, 100, 200);
+    flowerBtnGeo.rotateX(-Math.PI / 2);
     flowerBtnMaterial = new THREE.MeshLambertMaterial({
         color: null,
         map: new THREE.TextureLoader().load('textures/flowerBtn.png'),
         transparent: true
     });
-    flowerBtnMesh=new THREE.Mesh(flowerBtnGeo,flowerBtnMaterial);
-    flowerBtnMesh.position.set(-200,1,240);
+    flowerBtnMesh = new THREE.Mesh(flowerBtnGeo, flowerBtnMaterial);
+    flowerBtnMesh.position.set(-200, 1, 240);
     scene.add(flowerBtnMesh)
 
 
@@ -144,17 +147,31 @@ function init() {
     // sort the particles which enables
     // the behaviour we want
     //particleSystem.sortParticles = true;
+    
+    /* Particle system tween setup */
+    particlesPosition={x:0,y:1000,z:200};
+    particlesTarget={x:0,y:-1,z:200};
+    partTween= new TWEEN.Tween(particlesPosition);
+    partTween.to(particlesTarget,2000);
+    /* partTween.onUpdate(function () {
+        particleSystem.position.set(particlesPosition.x,particlesPosition.y,particlesPosition.z);
+        
+    }); */
+    //partTween.onUpdate(travelParticles);
+    partTween.onUpdate(tweenTravelParticles);
+    partTween.start();
+    
+
 
 
 
 
     // add it to the scene
 
+    
 
-    //add emitter
 
-    emitter.position.set(0, 0, 0);
-    camera.add(emitter);
+
 
 
     // lights
@@ -167,11 +184,11 @@ function init() {
     renderer.setClearColor(0xffffff, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-30, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth - 30, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
     document.getElementById('interactiveLayer').appendChild(renderer.domElement);
-    
+
 
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -194,7 +211,7 @@ function onWindowResize() {
     camera.aspect = document.getElementById('interactiveLayer').offsetWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     //renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth-20, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth - 20, window.innerHeight);
 }
 
 
@@ -246,11 +263,12 @@ function updateParticle() {
     //particleSystem.rotation.z += 0.01;
     //particleSystem.rotation.y += 0.01;
     particleSystem.size = Math.random() * 0.05 + 0.93;
-    travelParticles()
+    //travelParticles()
+    partTween.update()
 
 
 
-    var pCount = particleCount;
+    /* var pCount = particleCount;
     while (pCount--) {
         // get the particle
         var particle = particles.vertices[pCount];
@@ -278,12 +296,13 @@ function updateParticle() {
     // changed its vertices. This is the
     // dirty little secret.
     particleSystem.geometry.__dirtyVertices = true;
+ */
 
-
-    renderer.render(scene, camera);
-
+    
     // set up the next call
     requestAnimFrame(updateParticle);
+    
+    render();
 }
 function onDocumentMouseDown(event) {
 
@@ -319,7 +338,7 @@ function onDocumentMouseDown(event) {
     }
     updateParticle();
     return;
-    
+
 }
 function onDocumentTouchPress(event) {
 
@@ -388,16 +407,16 @@ function onDocumentTouchCPointContact(event) {
 }
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
-        case 16: isShiftDown = true;   break;
+        case 16: isShiftDown = true; break;
         case 49: toggleFlowers(); break;
         default:
-            //console.log(event.keyCode)
+        //console.log(event.keyCode)
     }
 }
 function onDocumentKeyUp(event) {
     switch (event.keyCode) {
         case 16: isShiftDown = false; break;
-        
+
     }
 }
 function travelProjectile() {
@@ -412,9 +431,9 @@ function toggleFlowers() {
 function toggleThaali() {
     followMouse = !followMouse;
 }
-function toggleFullscreen(){
+function toggleFullscreen() {
     $('.video-react-big-play-button').trigger("click");
-    var elem= document.getElementById('parent_space');
+    var elem = document.getElementById('parent_space');
     elem.requestFullscreen();
 }
 function travelParticles() {
@@ -434,6 +453,32 @@ function travelParticles() {
     if ((particleSystem.position.z < -300) || !travPartFlag) {
         scene.remove(particleSystem);
         particleSystem.position.set(0, 1000, 200);
+        //scene.add(particleSystem);
+        travPartFlag = false;
+        addPartFlag = true;
+
+    }
+
+}
+function tweenTravelParticles() {
+   
+    if (travPartFlag) {
+        if (addPartFlag) {
+            scene.add(particleSystem);
+            addPartFlag = false;
+            
+        }
+        console.log(particleSystem.position.y);
+
+        particleSystem.position.set(particleSystem.position.x,--particleSystem.position.y,particleSystem.position.z)
+        
+
+    }
+
+    if ((particleSystem.position.y < -200) || !travPartFlag) {
+        scene.remove(particleSystem);
+        particleSystem.position.set(0, 1000, 200);
+        partTween.stop();
         //scene.add(particleSystem);
         travPartFlag = false;
         addPartFlag = true;

@@ -1,4 +1,5 @@
-//import * as THREE from './libs/three.module.js'
+import * as THREE from './libs/three.module.js'
+import * as TWEEN from './libs/Tween.js'
 
 window.requestAnimFrame = (function () {
     return window.requestAnimationFrame ||
@@ -10,11 +11,12 @@ window.requestAnimFrame = (function () {
             window.setTimeout(callback, 1000 / 60);
         };
 })();
+var bodies = document.getElementsByTagName("body");
 var hammertime = new Hammer(document.getElementById('interactiveLayer'));
 var camera, scene, renderer;
 var plane;
 var mouse, raycaster, isShiftDown = false;
-var particleSystem;// create the particle variables
+var particleSystem,particlesPosition,particlesTarget,partTween;// create the particle variables
 var travPartFlag = false;
 var addPartFlag = true;
 
@@ -24,8 +26,9 @@ var emitter = new THREE.Object3D();
 var speed = 40;
 var clock = new THREE.Clock();
 //!plasma shooter
+var TWEENi;
 
-var particleCount = 60,
+var particleCount = 40,
 
     particles = new THREE.Geometry(),
     pMaterial = new THREE.PointsMaterial({
@@ -33,13 +36,14 @@ var particleCount = 60,
         transparent: true,
         size: 50,
         map: new THREE.TextureLoader().load(
-            "textures/particle.png"
+            "textures/particle-lower.png"
         ),
         blending: THREE.AdditiveBlending,
 
     });
 
 var rollOverMesh, rollOverMaterial;
+var flowerBtnMesh, flowerBtnMaterial
 var cubeGeo, cubeMaterial;
 var followMouse = false;
 var objects = [];
@@ -67,7 +71,26 @@ function init() {
 
     rollOverMesh = new THREE.Mesh(rollOverGeo, rollOverMaterial);
     rollOverMesh.overdraw = true;
+    rollOverMesh.position.set(0, 1, 240);
     scene.add(rollOverMesh);
+
+    //add flower button
+    var flowerBtnGeo = new THREE.PlaneGeometry(200, 100, 200);
+    flowerBtnGeo.rotateX(-Math.PI / 2);
+    flowerBtnMaterial = new THREE.MeshLambertMaterial({
+        color: null,
+        map: new THREE.TextureLoader().load('textures/flowerBtn.png'),
+        transparent: true
+    });
+    flowerBtnMesh = new THREE.Mesh(flowerBtnGeo, flowerBtnMaterial);
+    flowerBtnMesh.position.set(-200, 1, 240);
+    scene.add(flowerBtnMesh)
+
+
+
+
+
+
     // cubes
     cubeGeo = new THREE.BoxBufferGeometry(50, 50, 50);
     cubeMaterial = new THREE.MeshLambertMaterial(
@@ -123,17 +146,20 @@ function init() {
     // sort the particles which enables
     // the behaviour we want
     //particleSystem.sortParticles = true;
+    
+    /* Particle system tween setup */
+    particlesPosition={x:0,y:1000,z:200};
+
 
 
 
 
     // add it to the scene
 
+    
 
-    //add emitter
 
-    emitter.position.set(0, 0, 0);
-    camera.add(emitter);
+
 
 
     // lights
@@ -145,18 +171,23 @@ function init() {
     renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setClearColor(0xffffff, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth - 30, window.innerHeight);
     var hammertime = new Hammer(document.getElementById('interactiveLayer'));
     hammertime.on('tap', onDocumentTouchPress);
-    document.getElementById('interactiveLayer').appendChild(renderer.domElement)
+    document.getElementById('interactiveLayer').appendChild(renderer.domElement);
+
+
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     //hammertime.on('pan',onDocumentTouchPan)
     document.addEventListener('touchmove', onDocumentTouchPan, false);
+    document.addEventListener('touchend', resetThaaliPos, false);
+
     //document.addEventListener('touchstart', onDocumentMouseMove, false);
-    //document.addEventListener('mousedown', onDocumentMouseDown, false);
+    document.addEventListener('mousedown', onDocumentMouseDown, false);
     //hammertime.on('press',onDocumentMouseDown)
-    //document.addEventListener('mouseup', resetThaaliPos, false);
+    document.addEventListener('mouseup', resetThaaliPos, false);
     //document.addEventListener('touchend', resetThaaliPos, false);
     document.addEventListener('keydown', onDocumentKeyDown, false);
     document.addEventListener('keyup', onDocumentKeyUp, false);
@@ -164,21 +195,13 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    //camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = document.getElementById('interactiveLayer').offsetWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(document.getElementById('interactiveLayer').offsetWidth - 20, window.innerHeight);
 }
-function shootBall() {
-    let plasmaBall = new THREE.Mesh(new THREE.SphereGeometry(10, 10, 10), new THREE.MeshBasicMaterial({
-        color: "red"
-    }));
-    const center = new THREE.Vector3();
-    plasmaBall.position.copy(emitter.getWorldPosition(center)); // start position - the tip of the weapon
-    plasmaBall.quaternion.copy(camera.quaternion); // apply camera's quaternion
-    scene.add(plasmaBall);
-    plasmaBalls.push(plasmaBall);
-    render();
-}
+
 
 function onDocumentMouseMove(event) {
 
@@ -189,8 +212,6 @@ function onDocumentMouseMove(event) {
     if (intersects.length > 0) {
         var intersect = intersects[0];
         if (followMouse) {
-
-
             rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
             rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
         } else {
@@ -201,21 +222,20 @@ function onDocumentMouseMove(event) {
     render();
 }
 function onDocumentTouchPan(event) {
-
+    onDocumentTouchCPointContact(event)
     event.preventDefault();
     mouse.set((event.changedTouches[0].clientX / window.innerWidth) * 2 - 1, - (event.changedTouches[0].clientY / window.innerHeight) * 2 + 1);
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(objects);
     if (intersects.length > 0) {
         var intersect = intersects[0];
-        console.log("Following:"+followMouse)
+        //console.log("Following:" + followMouse)
         if (followMouse) {
             rollOverMesh.position.copy(intersect.point)//.add(intersect.face.normal);
             rollOverMesh.position.divideScalar(1).floor().multiplyScalar(1).addScalar(1);
         } else {
             resetThaaliPos();
         }
-
     }
     render();
 }
@@ -265,15 +285,16 @@ function updateParticle() {
     particleSystem.geometry.__dirtyVertices = true;
 
 
-    renderer.render(scene, camera);
-
+    
     // set up the next call
     requestAnimFrame(updateParticle);
+    
+    renderer.render(scene, camera);
 }
 function onDocumentMouseDown(event) {
 
     resetThaaliPos();
-    shootBall();
+    //shootBall();
 
     event.preventDefault();
 
@@ -285,7 +306,7 @@ function onDocumentMouseDown(event) {
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(objects);
 
-    travelParticles()
+    //travelParticles()
 
     if (intersects.length > 0) {
         var intersect = intersects[0];
@@ -296,32 +317,20 @@ function onDocumentMouseDown(event) {
                 followMouse = true;
             }
         }
+        if ((currentPoint.x > -284) && (currentPoint.x < -119)) {
+            if ((currentPoint.z > 202) && (currentPoint.z < 277)) {
+                toggleFlowers();
+            }
+        }
     }
     updateParticle();
     return;
-    if (intersects.length > 0) {
-        var intersect = intersects[0];
-        // delete cube
-        if (isShiftDown) {
-            if (intersect.object !== plane) {
-                scene.remove(intersect.object);
-                objects.splice(objects.indexOf(intersect.object), 1);
-            }
-            // create cube
-        } else {
-            var voxel = new THREE.Mesh(cubeGeo, cubeMaterial);
-            voxel.position.copy(intersect.point).add(intersect.face.normal);
-            voxel.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25);
-            scene.add(voxel);
-            objects.push(voxel);
-        }
-        render();
-    }
+
 }
 function onDocumentTouchPress(event) {
 
     resetThaaliPos();
-    shootBall();
+
 
 
     event.preventDefault();
@@ -343,7 +352,39 @@ function onDocumentTouchPress(event) {
 
         if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
             if ((currentPoint.z > 200) && (currentPoint.z < 268)) {
-                console.log('Capture Point detected.')
+                //console.log('Capture Point detected.')
+                followMouse = true;
+            }
+        }
+    }
+    updateParticle();
+    return;
+}
+function onDocumentTouchCPointContact(event) {
+
+
+
+
+    event.preventDefault();
+
+    // mouse.set((event.deltaX / window.innerWidth) * 2 - 1, - (event.deltaY / window.innerHeight) * 2 + 1);
+
+    //mouse.set((event.clientX / window.innerWidth) * 2 - 1, - (event.clientY / window.innerHeight) * 2 + 1);
+    mouse.set((event.targetTouches[0].clientX / window.innerWidth) * 2 - 1, - (event.targetTouches[0].clientY / window.innerHeight) * 2 + 1);
+
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(objects);
+
+    travelParticles()
+
+    if (intersects.length > 0) {
+        var intersect = intersects[0];
+        var currentPoint = intersect.point;
+
+        if ((currentPoint.x > -94) && (currentPoint.x < 94)) {
+            if ((currentPoint.z > 200) && (currentPoint.z < 268)) {
+                //console.log('Capture Point detected.')
                 followMouse = true;
             }
         }
@@ -353,12 +394,16 @@ function onDocumentTouchPress(event) {
 }
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
-        case 16: isShiftDown = true; toggleFlowers(); break;
+        case 16: isShiftDown = true; break;
+        case 49: toggleFlowers(); break;
+        default:
+        //console.log(event.keyCode)
     }
 }
 function onDocumentKeyUp(event) {
     switch (event.keyCode) {
         case 16: isShiftDown = false; break;
+
     }
 }
 function travelProjectile() {
@@ -370,6 +415,14 @@ function travelProjectile() {
 function toggleFlowers() {
     travPartFlag = !travPartFlag
 }
+function toggleThaali() {
+    followMouse = !followMouse;
+}
+function toggleFullscreen() {
+    $('.video-react-big-play-button').trigger("click");
+    var elem = document.getElementById('parent_space');
+    elem.requestFullscreen();
+}
 function travelParticles() {
     let delta = clock.getDelta();
     const partSpeed = -500;
@@ -379,7 +432,7 @@ function travelParticles() {
             addPartFlag = false;
         }
 
-        particleSystem.translateY(-partSpeed * delta / 2);
+        particleSystem.translateY(-partSpeed * delta / 10);
         particleSystem.translateZ(partSpeed * delta);
 
     }
